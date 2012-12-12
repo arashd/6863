@@ -1,0 +1,43 @@
+college student,university student
+
+teacher,educator,professor
+
+writer,author
+
+programmer,coder,software engineer
+
+web designer
+
+photographer
+
+ceo,founder,entrepreneur,cofounder
+
+musician
+
+waiter,waitress
+
+journalist,photojournalist,photo journalist
+
+film maker,filmmaker,film director,film producer
+
+fashion designer
+
+venture capitalist
+
+investment banker,trader
+
+cashier
+
+hair stylist
+
+professional dancer,choreographer
+
+physician
+
+golfer
+
+political;hippie
+
+official page,official page
+
+
