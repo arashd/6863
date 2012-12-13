@@ -2,6 +2,9 @@ import sys
 import MySQLdb
 import collections
 import requests
+import string
+import random
+import operator
 
 HOST = 'twitwi.mit.edu'
 USERNAME = '6863'
@@ -9,36 +12,110 @@ PASSWORD = '!trendistic'
 DBNAME = 'twitwi'
 PORT = 3306
 
-QUERY = """SELECT * FROM twitwi.primary_tweet where id > 164371352676573184 limit 1000;"""
+HASHTAG_COUNT = 1000
+MENTION_COUNT = 1000
+WORD_COUNT    = 100000
+
+SPECIAL_ID = 224371352676573184
+RANDOMIZER = 120000000000000
+
+def make_query(num_tweets):
+	return "SELECT * FROM twitwi.primary_tweet where id > " + str(random.randint(SPECIAL_ID, SPECIAL_ID + RANDOMIZER)) + " limit " + str(num_tweets) + ";"
+
+
 
 class Tokenizer(object):
 	
 	def __init__(self):
 		self.resolver = Resolver()
+		self.mention_hist = Histogram(Mention, MENTION_COUNT)	
+		self.hashtag_hist = Histogram(Hashtag, HASHTAG_COUNT)
+		self.word_hist = Histogram(str, WORD_COUNT)
 
-	def tokenize(self, tweet):
+	def feed(self, tweet):
+		tokenized = self.tokenize(tweet, False)
+		for token in tokenized['tokens']:
+			if token.__class__ == Mention:
+				self.mention_hist.add_element(token)
+			elif token.__class__ == Hashtag:
+				self.hashtag_hist.add_element(token)
+			elif token.__class__ == str:
+				self.word_hist.add_element(token)
+	
+	def end_feeding(self):
+		for hist in [self.mention_hist, self.hashtag_hist, self.word_hist]:
+			sorted_keys = [item[0] for item in sorted(hist.d.iteritems(), key=operator.itemgetter(1), reverse = True)[:hist.max_count]]
+			for key in hist.d.keys():
+				if key not in sorted_keys:
+					del hist.d[key]
+			print sorted_keys[:10]
+			print 'feeding ended... '
+
+	def tokenize(self, tweet, check_hists):
 		tokenized_tweet = {}
-		tokenized_tweet['retweet'] = False
 
 		tokens = []
 		entities = tweet.split()
 		for entity in entities:
 			if entity.startswith('@'):
-				tokens.append(Mention(entity[1:]))
+				mention = Mention(entity[1:])
+				if (not check_hists) or self.mention_hist.qualifies(mention):
+					tokens.append(mention)
 			elif entity.startswith('#'):
-				tokens.append(Hashtag(entity[1:]))
+				hashtag = Hashtag(entity[1:])
+				if (not check_hists) or self.hashtag_hist.qualifies(hashtag):
+					tokens.append(hashtag)
 			elif entity.startswith('http://t.co'):
-				#domain = self.resolver.resolve(entity)
-				domain = entity
-				if domain:
-					tokens.append(Domain(domain))
+				domain = Domain(entity) 
+				tokens.append(domain)
 			elif entity == 'RT':
 				tokens.append(Retweet())
-				tokenized_tweet['retweet'] = True
 			else:
-				tokens.append(entity)
+				# get rid of punctuation at end and start
+				entity = self.strip_affixes(entity)
+				# makes everything lowercase
+				entity = entity.lower()
+
+				# strips punctuation from both ends
+				entity = entity.strip(string.punctuation)
+			
+				entity = entity.translate(None, string.punctuation)
+				if (not check_hists) or self.word_hist.qualifies(entity):
+					tokens.append(entity)
+
 		tokenized_tweet['tokens'] = tokens
 		return tokenized_tweet
+
+	def strip_affixes(self, entity):
+		stripped = entity[-2:]
+
+		if stripped in ['\'s', '\'d', '\'ll']:
+			entity = stripped
+			
+		stripped = entity[-3:]
+
+		if stripped in ['\'ll', '\'re']:
+			entity = stripped
+		
+		return entity
+
+		
+class Histogram(object):
+	def __init__(self, element_class, max_count):
+		self.d = {}
+		self.element_class = element_class
+		self.max_count = max_count
+
+	def add_element(self, element):
+		if not element.__class__ == self.element_class:
+			raise RuntimeException("wrong type added to histogram")
+		if not (element in self.d):
+			self.d[element] = 0
+		self.d[element]+=1
+	
+	def qualifies(self, element):
+		return (element in self.d)
+
 
 class Retweet(object):
 	def __init__(self):
@@ -98,12 +175,10 @@ class Twiterator(collections.Iterator):
 			raise StopIteration
 
 
-
-
-
 if __name__ == '__main__':
 	cursor = None
 
+	import time
 	try:
 		connection = MySQLdb.connect(host = HOST, user = USERNAME, 
 				passwd = PASSWORD, db = DBNAME, port = PORT)
@@ -112,15 +187,18 @@ if __name__ == '__main__':
 		print 'Server not responding...'
 		sys.exit(0)
 	
-	twiterator = Twiterator(cursor, QUERY)
-	tokenizer = Tokenizer()
+	t = time.time()
 	
-	domain_count = 0
+	twiterator = Twiterator(cursor, make_query(20000))
+	tokenizer = Tokenizer()	
+
 	for tweet in twiterator:
-		for token in tokenizer.tokenize(tweet['text'])['tokens']:
-			print token
+		tokenizer.feed(tweet['text'])
+	tokenizer.end_feeding()
 
+#	for tweet in twiterator:
+#		for token in tokenizer.tokenize(tweet['text'])['tokens']:
+#			print token
 
-
-
+	print time.time() - t
 
