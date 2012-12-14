@@ -68,8 +68,8 @@ class Tokenizer(object):
 				else:
 					tokens.append(RareHashtag(entity[1:]))
 			elif entity.startswith('http://t.co'):
-				domain = Domain(entity) 
-				tokens.append(domain)
+				url = URL(entity) 
+				tokens.append(url)
 			elif entity == 'RT':
 				tokens.append(Retweet())
 			else:
@@ -137,11 +137,11 @@ class Hashtag(object):
 	def __repr__(self):
 		return '<HASHTAG: ' + '#' + self.s + '>'
 
-class Domain(object):
-	def __init__(self, domain):
-		self.domain = domain
+class URL(object):
+	def __init__(self, url):
+		self.url = url
 	def __repr__(self):
-		return '<DOMAIN: ' + self.domain + '>'
+		return '<URL: ' + self.url + '>'
 
 
 
