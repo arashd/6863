@@ -27,7 +27,7 @@ def make_query(num_tweets):
 class Tokenizer(object):
 	
 	def __init__(self):
-		self.resolver = Resolver()
+		#self.resolver = Resolver()
 		self.mention_hist = Histogram(Mention, MENTION_COUNT)	
 		self.hashtag_hist = Histogram(Hashtag, HASHTAG_COUNT)
 		self.word_hist = Histogram(str, WORD_COUNT)
@@ -70,8 +70,8 @@ class Tokenizer(object):
 				else:
 					tokens.append(RareHashtag(entity[1:]))
 			elif entity.startswith('http://t.co'):
-				domain = Domain(entity) 
-				tokens.append(domain)
+				url = URL(entity) 
+				tokens.append(url)
 			elif entity == 'RT':
 				tokens.append(Retweet())
 			else:
@@ -84,6 +84,8 @@ class Tokenizer(object):
 				entity = entity.strip(string.punctuation)
 			
 				entity = entity.translate(None, string.punctuation)
+				if entity == '' or entity == ' '*len(entity):
+					continue
 				if (not check_hists) or self.word_hist.qualifies(entity):
 					tokens.append(entity)
 				else:
@@ -141,11 +143,11 @@ class Hashtag(object):
 	def __repr__(self):
 		return '<HASHTAG: ' + '#' + self.s + '>'
 
-class Domain(object):
-	def __init__(self, domain):
-		self.domain = domain
+class URL(object):
+	def __init__(self, url):
+		self.url = url
 	def __repr__(self):
-		return '<DOMAIN: ' + self.domain + '>'
+		return '<URL: ' + self.url + '>'
 
 
 
