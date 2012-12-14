@@ -14,7 +14,7 @@ PORT = 3306
 
 HASHTAG_COUNT = 1000
 MENTION_COUNT = 1000
-WORD_COUNT    = 100000
+WORD_COUNT    = 10000
 
 SPECIAL_ID = 224371352676573184
 RANDOMIZER = 120000000000000
@@ -48,7 +48,7 @@ class Tokenizer(object):
 			for key in hist.d.keys():
 				if key not in sorted_keys:
 					del hist.d[key]
-			print sorted_keys[:10]
+			#print sorted_keys[:10]
 			print 'feeding ended... '
 
 	def tokenize(self, tweet, check_hists):
@@ -61,10 +61,14 @@ class Tokenizer(object):
 				mention = Mention(entity[1:])
 				if (not check_hists) or self.mention_hist.qualifies(mention):
 					tokens.append(mention)
+				else:
+					tokens.append(RareMention(entity[1:]))
 			elif entity.startswith('#'):
 				hashtag = Hashtag(entity[1:])
 				if (not check_hists) or self.hashtag_hist.qualifies(hashtag):
 					tokens.append(hashtag)
+				else:
+					tokens.append(RareHashtag(entity[1:]))
 			elif entity.startswith('http://t.co'):
 				domain = Domain(entity) 
 				tokens.append(domain)
@@ -82,6 +86,8 @@ class Tokenizer(object):
 				entity = entity.translate(None, string.punctuation)
 				if (not check_hists) or self.word_hist.qualifies(entity):
 					tokens.append(entity)
+				else:
+					tokens.append(RareWord(entity))
 
 		tokenized_tweet['tokens'] = tokens
 		return tokenized_tweet
@@ -124,10 +130,10 @@ class Retweet(object):
 		return '<RT>'
 
 class Mention(object):
-	def __init__(self, s):
-		self.s = s
+	def __init__(self, name):
+		self.name = name
 	def __repr__(self):
-		return '<MENTION: ' + '@' + self.s + '>'
+		return '<MENTION: ' + '@' + self.name + '>'
 
 class Hashtag(object):
 	def __init__(self, s):
@@ -140,6 +146,28 @@ class Domain(object):
 		self.domain = domain
 	def __repr__(self):
 		return '<DOMAIN: ' + self.domain + '>'
+
+
+
+class RareWord(object):
+	def __init__(self, word):
+		self.word = word
+	def __repr__(self):
+		return '<RARE WORD: ' + self.word + '>'
+
+
+class RareMention(Mention):
+	def __init__(self, name):
+		self.name = name
+	def __repr__(self):
+		return '<RARE MENTION ' + '@' + self.name + '>'
+
+class RareHashtag(Hashtag):
+	def __init__(self, s):
+		self.s = s
+	def __repr__(self):
+		return '<RARE HASHTAG ' + '#' + self.s + '>'
+
 
 class Resolver(object):
 	def __init__(self):
@@ -195,6 +223,17 @@ if __name__ == '__main__':
 	for tweet in twiterator:
 		tokenizer.feed(tweet['text'])
 	tokenizer.end_feeding()
+	
+	print len(tokenizer.mention_hist.d.keys())
+
+	t = time.time()
+
+	twiterator = Twiterator(cursor, make_query(20000))
+
+	for tweet in twiterator:
+		tokens = tokenizer.tokenize(tweet['text'], True)
+		print tweet['text']
+		print tokens		
 
 #	for tweet in twiterator:
 #		for token in tokenizer.tokenize(tweet['text'])['tokens']:
