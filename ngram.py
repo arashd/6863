@@ -7,6 +7,8 @@ Created on Dec 13, 2012
 '''
 
 from collections import defaultdict
+import math
+import random
 
 class NGram:
     
@@ -31,8 +33,6 @@ class NGram:
     #     tokenized sentence(a list)                      #
     #######################################################
     def train_bigram(self, sent):
-        sent.insert(0,'*start*')
-        sent.append('*end*')
         total_token = len(sent)
         for i in range(total_token - 1):
             cur_bigram = sent[i].__str__() + ' ' + sent[i+1].__str__()
@@ -56,7 +56,7 @@ class NGram:
                 count = 0
             cur_unicount = (count + 1) * self.total_unicount / (self.total_unicount + len(self.unicount))
             prob *= (cur_unicount / self.total_unicount)
-        return prob
+        return math.log(prob)
     
     #######################################################
     #     Calculate bigram probability of a sentence      #
@@ -77,4 +77,57 @@ class NGram:
             cur_bigram = sent[i].__str__()+' '+sent[i+1].__str__()
             cur_bicount = self.bicount[cur_bigram] + 1
             prob *= (cur_bicount / cur_unicount)
-        return prob
+        return math.log(prob)
+
+    #######################################################
+    #     Genrate random sentence using                   #
+    #     the current unigram model                       #
+    #######################################################
+    def gen_unigram(self):
+        sent = []
+        while True:
+            pos = random.random() * self.total_unicount
+            cur_pos = 0
+            for word in self.unicount:
+                cur_pos += self.unicount[word]
+                if cur_pos > pos: # find the word
+                    if word == '*end*':
+                        return sent
+                    elif word != '*start*':
+                        sent.append(word)
+                    break
+                    
+    #######################################################
+    #     Genrate random sentence using                   #
+    #     the current unigram model                       #
+    #######################################################
+    def gen_bigram(self):
+        sent = []
+        cur_word = '*start*'
+        while True:
+            num_of_bigram = self.unicount[cur_word]
+            pos = random.random() * num_of_bigram
+            cur_pos = 0
+            for bi in self.bicount:
+                first = bi.split()[0]
+                second = bi.split()[1]
+                if first == cur_word:
+                    cur_pos += self.bicount[bi]
+                    if cur_pos > pos:
+                        if second == '*end*':
+                            return sent
+                        else:
+                            sent.append(second)
+                            cur_word = second
+                        break
+                
+#if __name__ == "__main__":
+#    model = NGram()
+#    sent1 = ['John', 'read', 'a', 'book']
+#    sent2 = ['Mary', 'read', 'a', 'different', 'book']
+#    model.train_unigram(sent1)
+#    model.train_unigram(sent2)
+#    model.train_bigram(sent1)
+#    model.train_bigram(sent2)
+#    sent = model.gen_bigram()
+#    print sent
