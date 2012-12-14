@@ -27,14 +27,14 @@ def make_query(num_tweets):
 class Tokenizer(object):
 	
 	def __init__(self):
-		self.resolver = Resolver()
+#		self.resolver = Resolver()
 		self.mention_hist = Histogram(Mention, MENTION_COUNT)	
 		self.hashtag_hist = Histogram(Hashtag, HASHTAG_COUNT)
 		self.word_hist = Histogram(str, WORD_COUNT)
 
 	def feed(self, tweet):
 		tokenized = self.tokenize(tweet, False)
-		for token in tokenized['tokens']:
+		for token in tokenized:
 			if token.__class__ == Mention:
 				self.mention_hist.add_element(token)
 			elif token.__class__ == Hashtag:
@@ -52,8 +52,6 @@ class Tokenizer(object):
 			print 'feeding ended... '
 
 	def tokenize(self, tweet, check_hists):
-		tokenized_tweet = {}
-
 		tokens = []
 		entities = tweet.split()
 		for entity in entities:
@@ -82,15 +80,13 @@ class Tokenizer(object):
 
 				# strips punctuation from both ends
 				entity = entity.strip(string.punctuation)
-			
 				entity = entity.translate(None, string.punctuation)
-				if (not check_hists) or self.word_hist.qualifies(entity):
-					tokens.append(entity)
-				else:
-					tokens.append(RareWord(entity))
-
-		tokenized_tweet['tokens'] = tokens
-		return tokenized_tweet
+				if entity != '':
+					if (not check_hists) or self.word_hist.qualifies(entity):
+						tokens.append(entity)
+					else:
+						tokens.append(RareWord(entity))
+		return tokens
 
 	def strip_affixes(self, entity):
 		stripped = entity[-2:]
@@ -154,20 +150,24 @@ class RareWord(object):
 		self.word = word
 	def __repr__(self):
 		return '<RARE WORD: ' + self.word + '>'
-
+	def __str__(self):
+		return "*rare_word*"
 
 class RareMention(Mention):
 	def __init__(self, name):
 		self.name = name
 	def __repr__(self):
 		return '<RARE MENTION ' + '@' + self.name + '>'
+	def __str__(self):
+		return "*rare_mention*"
 
 class RareHashtag(Hashtag):
 	def __init__(self, s):
 		self.s = s
 	def __repr__(self):
 		return '<RARE HASHTAG ' + '#' + self.s + '>'
-
+	def __str__(self):
+		return "*rare_hashtag*"
 
 #class Resolver(object):
 #	def __init__(self):

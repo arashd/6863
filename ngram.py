@@ -23,7 +23,7 @@ class NGram:
         sent.insert(0, '*start*')
         sent.append('*end*')
         for token in sent:
-            self.unicount[token] += 1
+            self.unicount[token.__str__()] += 1
             self.total_unicount += 1
     
     #######################################################
@@ -35,7 +35,7 @@ class NGram:
         sent.append('*end*')
         total_token = len(sent)
         for i in range(total_token - 1):
-            cur_bigram = sent[i] + '    ' + sent[i+1]
+            cur_bigram = sent[i].__str__() + ' ' + sent[i+1].__str__()
             self.bicount[cur_bigram] += 1
             
     
@@ -48,6 +48,7 @@ class NGram:
         sent.append('*end*')
         prob = 1.0
         for token in sent:
+            token = token.__str__()
             # add-one smoothing
             if token in self.unicount:
                 count = self.unicount[token]
@@ -68,33 +69,12 @@ class NGram:
         total_token = len(sent)
         for i in range(total_token - 1):
             # Laplace smoothing
-            if sent[i] in self.unicount:
+            if sent[i].__str__() in self.unicount:
                 count = self.unicount[sent[i]]
             else:
                 count = 0
             cur_unicount = count + len(self.unicount)
-            cur_bigram = sent[i]+'    '+sent[i+1]
+            cur_bigram = sent[i].__str__()+' '+sent[i+1].__str__()
             cur_bicount = self.bicount[cur_bigram] + 1
             prob *= (cur_bicount / cur_unicount)
         return prob
-    
-    
-    
-if __name__ == '__main__':
-    f=open('../6.863/tweet/artist', 'r')
-    sentences = []
-    for line in f:
-        pass
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
