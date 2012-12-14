@@ -1,7 +1,7 @@
 import sys
 import MySQLdb
 import collections
-import requests
+#import requests
 import string
 import random
 import operator
@@ -169,18 +169,18 @@ class RareHashtag(Hashtag):
 		return '<RARE HASHTAG ' + '#' + self.s + '>'
 
 
-class Resolver(object):
-	def __init__(self):
-		pass
-
-	def resolve(self, url):
-		try:
-			r = requests.get(url)
-			if 'domain' in r.headers:
-				return r.headers['domain']
-		except:
-			return None
-		return None
+#class Resolver(object):
+#	def __init__(self):
+#		pass
+#
+#	def resolve(self, url):
+#		try:
+#			r = requests.get(url)
+#			if 'domain' in r.headers:
+#				return r.headers['domain']
+#		except:
+#			return None
+#		return None
 
 class Twiterator(collections.Iterator):
 	cursor = None
