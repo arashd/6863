@@ -124,25 +124,32 @@ class Retweet(object):
 		pass
 	def __repr__(self):
 		return '<RT>'
+	def __str__(self):
+		return '*RT*'
 
 class Mention(object):
 	def __init__(self, name):
 		self.name = name
 	def __repr__(self):
 		return '<MENTION: ' + '@' + self.name + '>'
-
+	def __str__(self):
+		return '@' + self.name
+		
 class Hashtag(object):
 	def __init__(self, s):
 		self.s = s
 	def __repr__(self):
 		return '<HASHTAG: ' + '#' + self.s + '>'
+	def __str__(self):
+		return '#' + self.s
 
 class URL(object):
 	def __init__(self, url):
 		self.url = url
 	def __repr__(self):
 		return '<URL: ' + self.url + '>'
-
+	def __str__(self):
+		return "*url*"
 
 
 class RareWord(object):

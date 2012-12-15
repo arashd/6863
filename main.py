@@ -1,23 +1,79 @@
+import os
 from ngram import *
 from common_descriptors import *
-    
-if __name__ == '__main__':
-    f=open('dat/tweet/artist', 'r')
+
+def tokenize_file(input, output):
+    print 'tokenizing ' + input
+    infile = open(input, 'r')
     sentences = []
-    prefixes = []
     tokenizer = Tokenizer()
-    for line in f:
-        text = line.split("\t")[2].strip()
-        sentences.append(text)
+    for line in infile:
+        parts = line.split('\t')
+        id = parts[0]
+        uid = parts[1]
+        text = parts[2].strip()
+        sentences.append([id, uid, text])
         tokenizer.feed(text)
+    infile.close()
     tokenizer.end_feeding()
-    print len(sentences)
-    ngram = NGram()
-    for sentence in sentences[0:1000]:
-        tokens = tokenizer.tokenize(sentence, True)
-        print tokens
-        ngram.train_bigram(tokens)
-    
-    
-    
-    
+    outfile = open(output, 'w')
+    for sentence in sentences:
+        tokens = tokenizer.tokenize(sentence[2], True)
+        line = sentence[0] + '\t' + sentence[1]
+        for token in tokens:
+            line = line + '\t' + token.__str__()
+        outfile.write(line + '\n')
+    outfile.close()
+def tokenize_folder(input, output):
+    filenames = os.listdir(input)
+    for filename in filenames:
+        tokenize_file(input + "/" + filename, output + "/" + filename)
+
+def get_bigram(model, n = 10):
+    for i in range(n):
+        print model.gen_bigram() 
+
+def eval_file(model, input, output):
+    infile = open(input, 'r')
+    outfile = open(output, 'w')
+    total_prob = 0
+    counter = 0
+    for line in infile:
+        counter +=1
+        sentence = line.strip().split('\t')
+        if len(sentence) == 2:
+            continue
+        prob = model.prob_bigram(sentence[2:]) / (len(sentence) - 2)
+        total_prob += prob
+        outfile.write(sentence[0] + '\t' + sentence[1] + '\t' + str(prob) + '\n')
+    infile.close()
+    outfile.close()
+    print input, total_prob/counter
+    return total_prob/counter
+
+def eval_folder(model, input, output):
+    filenames = os.listdir(input)
+    for filename in filenames:
+        eval_file(model, input + "/" + filename, output + "/" + filename)
+
+def train_model(filename):
+    print 'training model ' + filename
+    model = NGram()
+    file = open(filename, 'r')
+    for line in file:
+        line = line.strip()
+        tokens = line.split('\t')[2:]
+        model.train_unigram(tokens)
+        model.train_bigram(tokens)
+    file.close()
+    return model
+
+def eval_models(input, output):
+    filenames = os.listdir(input)
+    for filename in filenames:
+        model = train_model(input + '/' + filename)
+        os.makedirs(output + '/' + filename)
+        eval_folder(model, 'dat/tokenized_user_tweet',  output + '/' + filename)
+        
+if __name__ == '__main__':
+    eval_models('dat/tokenized_tweet', 'dat/tweet_model')
