@@ -16,12 +16,14 @@ class NGram:
         self.unicount = defaultdict(float) # unigram counts
         self.total_unicount = 0 # total unigram counts
         self.bicount = defaultdict(float) # bigram counts
-        
+        self.ids = {}
     #######################################################
     #     Train(update) unigram model with an input       #
     #     tokenized sentence(a list)                      #
     #######################################################
-    def train_unigram(self, sent):
+    def train_unigram(self, sent, id = None):
+        if id != None:
+            ids[id] = True
         sent.insert(0, '*start*')
         sent.append('*end*')
         for token in sent:
@@ -62,7 +64,9 @@ class NGram:
     #     Calculate bigram probability of a sentence      #
     #     using the current bigram model                  #
     #######################################################
-    def prob_bigram(self, sent):
+    def prob_bigram(self, sent, id = None):
+        if id != None and ids[id]:
+            return None
         sent.insert(0,'*start*')
         sent.append('*end*')
         prob = 1.0

@@ -39,12 +39,12 @@ def eval_file(model, input, output):
     total_prob = 0
     counter = 0
     for line in infile:
-        counter +=1
         sentence = line.strip().split('\t')
         if len(sentence) == 2:
             continue
-        prob = model.prob_bigram(sentence[2:]) / (len(sentence) - 2)
+        prob = model.prob_bigram(sentence[2:])
         total_prob += prob
+        counter +=1
         outfile.write(sentence[0] + '\t' + sentence[1] + '\t' + str(prob) + '\n')
     infile.close()
     outfile.close()
@@ -68,12 +68,31 @@ def train_model(filename):
     file.close()
     return model
 
-def eval_models(input, output):
-    filenames = os.listdir(input)
+def eval_models(train, test, output):
+    filenames = os.listdir(train)
     for filename in filenames:
-        model = train_model(input + '/' + filename)
+        model = train_model(train + '/' + filename)
         os.makedirs(output + '/' + filename)
-        eval_folder(model, 'dat/tokenized_user_tweet',  output + '/' + filename)
+        eval_folder(model, test,  output + '/' + filename)
+
+def remove_duplicates(data, reference, output):
+    filenames = os.listdir(data)
+    for filename in filenames:
+        data_file = open(data + '/' + filename, 'r')
+        reference_file = open(reference + '/' + filename, 'r')
+        output_file = open(output + '/' + filename, 'w')
+        ids = {}
+        for line in reference_file:
+            id = line.split('\t')[0]
+            ids[id] = True
+        for line in data_file:
+            id = line.split('\t')[0]
+            if id not in ids:
+                output_file.write(line)
+        reference_file.close()
+        data_file.close()
+        output_file.close()
         
 if __name__ == '__main__':
-    eval_models('dat/tokenized_tweet', 'dat/tweet_model')
+    eval_models('dat/tokenized_tweet', 'dat/tokenized_user_tweet_less', 'dat/tweet_model_less')
+    #remove_duplicates('dat/tokenized_user_tweet', 'dat/tokenized_tweet', 'dat/tokenized_user_tweet_less')
