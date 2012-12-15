@@ -1,10 +1,10 @@
-import subprocess
+import subprocess, os
 
 class POSTagger(object):
 	# initializes tagger by calling shell script.
 	# the first call basically trains the tagger.
 	def __init__(self):
-		self.p = subprocess.Popen(['/Users/arashd/Dropbox/workspace/6.863/project/tagger/runTagger.sh'], 
+		self.p = subprocess.Popen([os.getcwd() + '/runTagger.sh'], 
 			stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
 	# tags the tweet by putting it on stdin and reading 
