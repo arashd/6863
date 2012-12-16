@@ -92,7 +92,73 @@ def remove_duplicates(data, reference, output):
         reference_file.close()
         data_file.close()
         output_file.close()
+ 
+def merge_tweet(folder, output_folder):
+    filenames = os.listdir(folder)
+    for filename in filenames:
+        tweets = {}
+        for filename2 in filenames:
+            input = open(folder + '/' + filename2 + '/' + filename, 'r')
+            for line in input:
+                parts = line.strip().split('\t')
+                id = parts[0]
+                prob = parts[2][:7]
+                if id in tweets:
+                    tweets[id].append(prob)
+                else:
+                    tweets[id] = [parts[1], prob]
+            input.close()
+        output = open(output_folder + '/' + filename, 'w')
+        for filename2 in filenames:
+            output.write('\t' + filename2)
+        output.write('\n')
+        for id in tweets:
+            output.write(list_to_string(id, tweets[id]) + '\n')
+        output.close()
+
+def list_to_string(id, list):
+    output = id
+    for element in list:
+        output += '\t' + str(element)[:7]
+    return output
+
+def merge_user(folder, output_folder):
+    filenames = os.listdir(folder)
+    for filename in filenames:
+        input = open(folder + '/' + filename, 'r')
+        users = {}
+        next(input)
+        for line in input:
+            parts = line.strip().split('\t')
+            uid = parts[1]
+            if uid in users:
+                users[uid] = add_probs(users[uid], parts[2:])
+            else:
+                users[uid] = add_probs(None, parts[2:])
+            if uid == '11308402':
+                print users[uid]
+        output = open(output_folder + '/' + filename, 'w')
+        output.write('uid' + '\t' + 'count')
+        for filename2 in filenames:
+            output.write('\t' + filename2)
+        output.write('\n')
+        for uid in users:
+            probs = [users[uid][0]] + [x / users[uid][0] for x in users[uid][1:]]
+            output.write(list_to_string(uid, probs) + '\n')
+            
+def add_probs(probs, delta):
+    if probs == None:
+        probs = [1]
+        for prob in delta:
+            probs.append(float(prob))
+    else:
+        probs[0] += 1
+        for i in range(1, len(probs)):
+            probs[i] += float(delta[i-1])
+    return probs
         
 if __name__ == '__main__':
-    eval_models('dat/tokenized_tweet', 'dat/tokenized_user_tweet_less', 'dat/tweet_model_less')
+    #eval_models('dat/tokenized_tweet', 'dat/tokenized_user_tweet_less', 'dat/tweet_model_less')
     #remove_duplicates('dat/tokenized_user_tweet', 'dat/tokenized_tweet', 'dat/tokenized_user_tweet_less')
+    #merge_tweet('dat/tweet_model_less', 'dat/tweet_model_less_merged')
+    merge_user('dat/tweet_model_less_merged', 'dat/user_classification')
